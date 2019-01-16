@@ -1,0 +1,1 @@
+0000000000000000000000000000000000000000 259cfefbedf21d449e1ce80df63108cdbe26bf7f tangcord <tangcord@node.cordtester.cord-testdrive-pg0.utah.cloudlab.us> 1546340345 -0700	fetch --progress origin --tags +refs/heads/*:refs/remotes/origin/* +refs/heads/cord-5.0:refs/remotes/origin/cord-5.0: storing head

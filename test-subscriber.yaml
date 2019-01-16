@@ -1,0 +1,143 @@
+
+
+
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+description: Creates a CORD test subscriber, created by platform-install
+
+imports:
+  - custom_types/cordsubscriberroot.yaml
+  - custom_types/site.yaml
+  - custom_types/slice.yaml
+  - custom_types/user.yaml
+  - custom_types/voltservice.yaml
+  - custom_types/volttenant.yaml
+  - custom_types/serviceinstancelink.yaml
+
+topology_template:
+  node_templates:
+
+# site, fully created in deployment.yaml
+    mysite:
+      type: tosca.nodes.Site
+      properties:
+        name: mysite
+        must-exist: true
+
+# vsg slice, volt service, fully created in cord-services.yaml
+    mysite_vsg:
+      type: tosca.nodes.Slice
+      properties:
+        name: mysite_vsg
+        must-exist: true
+
+    service#volt:
+      type: tosca.nodes.VOLTService
+      properties:
+        name: volt
+        must-exist: true
+
+# Test subscriber
+
+    # Let's add a user who can be administrator of the household
+    johndoe@myhouse.com:
+      type: tosca.nodes.User
+      properties:
+        password: letmein
+        firstname: john
+        lastname: doe
+        username: johndoe@myhouse.com
+        email: johndoe@myhouse.com
+      requirements:
+        - site:
+            node: mysite
+            relationship: tosca.relationships.BelongsToOne
+        # NOTE: is this useful? can't find this relation in the old TOSCA
+        # - dependency:
+        #     node: mysite_vsg
+        #     relationship: tosca.relationships.DependsOn
+
+    # A subscriber
+    my_house:
+      type: tosca.nodes.CordSubscriberRoot
+      properties:
+        name: My House
+        service_specific_id: "123"
+        firewall_enable: false
+        cdn_enable: false
+        url_filter_enable: false
+        url_filter_level: R
+      # NOTE this appears not to be used
+      # requirements:
+      #   - house_admin:
+      #       node: johndoe@myhouse.com
+      #       relationship: tosca.relationships.AdminPrivilege
+
+    # NOTE needs to be moved to a new model (now they are JSON encoded)
+    # Mom's PC:
+    #   type: tosca.nodes.CORDUser
+    #   properties:
+    #     mac: 01:02:03:04:05:06
+    #     level: PG_13
+    #   requirements:
+    #     - household:
+    #         node: My House
+    #         relationship: tosca.relationships.SubscriberDevice
+
+    # Dad's PC:
+    #   type: tosca.nodes.CORDUser
+    #   properties:
+    #     mac: 90:E2:BA:82:F9:75
+    #     level: PG_13
+    #   requirements:
+    #     - household:
+    #         node: My House
+    #         relationship: tosca.relationships.SubscriberDevice
+
+    # Jack's Laptop:
+    #   type: tosca.nodes.CORDUser
+    #   properties:
+    #     mac: 68:5B:35:9D:91:D5
+    #     level: PG_13
+    #   requirements:
+    #     - household:
+    #         node: My House
+    #         relationship: tosca.relationships.SubscriberDevice
+
+    # Jill's Laptop:
+    #   type: tosca.nodes.CORDUser
+    #   properties:
+    #     mac: 34:36:3B:C9:B6:A6
+    #     level: PG_13
+    #   requirements:
+    #     - household:
+    #         node: My House
+    #         relationship: tosca.relationships.SubscriberDevice
+
+    si#volt:
+      type: tosca.nodes.VOLTTenant
+      properties:
+        name: My Volt
+        service_specific_id: "123"
+        s_tag: 222
+        c_tag: 111
+      requirements:
+        - owner:
+            node: service#volt
+            relationship: tosca.relationships.BelongsToOne
+        # - subscriber:
+        #     node: my_house
+        #     relationship: tosca.relationships.BelongsToSubscriber
+        # - dependency:
+        #     node: mysite_vsg
+        #     relationship: tosca.relationships.DependsOn
+
+    My_Volt_My_House:
+        type: tosca.nodes.ServiceInstanceLink
+        requirements:
+          - provider_service_instance:
+              node: si#volt
+              relationship: tosca.relationships.BelongsToOne
+          - subscriber_service_instance:
+              node: my_house
+              relationship: tosca.relationships.BelongsToOne
